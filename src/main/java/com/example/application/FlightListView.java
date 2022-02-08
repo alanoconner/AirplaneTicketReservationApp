@@ -18,7 +18,15 @@ import java.sql.SQLException;
 @Route("/flightList")
 public class FlightListView extends VerticalLayout {
 
-    MainView mainView = new MainView();
+    MainView mainView;
+
+    {
+        try {
+            mainView = new MainView();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
 
     public FlightListView() throws SQLException {
         VerticalLayout verticalLayout = new VerticalLayout();
@@ -29,8 +37,8 @@ public class FlightListView extends VerticalLayout {
         TextField departTxt = new TextField();
         TextField arriveTxt = new TextField();
         TextField dates = new TextField();
-        Button wayType = new Button("Two-way");
-        Button adultNum = new Button("1");
+        Button wayType = new Button(mainView.changeBtn.getText());
+        Button adultNum = new Button(mainView.adultNum.getValue().toString());// stopped here, this didnt work
         Button childNum = new Button("0");
         departTxt.setValue("FUK");
         departTxt.setReadOnly(true);
