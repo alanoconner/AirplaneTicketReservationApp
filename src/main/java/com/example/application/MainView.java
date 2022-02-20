@@ -9,6 +9,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -103,19 +104,15 @@ public class MainView extends VerticalLayout {
         changeBtn.setSizeFull();
         changeBtn.addThemeVariants(ButtonVariant.LUMO_ICON);
         searchButton.addClickListener(clickEvent->{
-           id = random.nextInt(99999);
-           String type = "tolist";
-            try {
-                statement.executeUpdate("INSERT INTO permanentData VALUES ("+ id +","+"'"+
-                        type+"'"+","+"'"+dep.getValue()+"'"+","+"'"+
-                        arr.getValue()+"'"+","+","+adultNum.getValue()+","+
-                        childNum.getValue()+startDate+","+endDate+");");
-
-
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            id = random.nextInt(99999);
             VaadinService.getCurrentRequest().getWrappedSession().setAttribute("id",id);
+            VaadinService.getCurrentRequest().getWrappedSession().setAttribute("waytype",changeBtn.getText());
+            VaadinService.getCurrentRequest().getWrappedSession().setAttribute("depcity",dep.getValue());
+            VaadinService.getCurrentRequest().getWrappedSession().setAttribute("arrcity",arr.getValue());
+            VaadinService.getCurrentRequest().getWrappedSession().setAttribute("adult",adultNum.getValue());
+            VaadinService.getCurrentRequest().getWrappedSession().setAttribute("child",childNum.getValue());
+            VaadinService.getCurrentRequest().getWrappedSession().setAttribute("depdate",startDate.getValue());
+            VaadinService.getCurrentRequest().getWrappedSession().setAttribute("retdate",endDate.getValue() );
 
             UI.getCurrent().navigate("/flightList");
         });
@@ -144,7 +141,7 @@ public class MainView extends VerticalLayout {
         childL.setPadding(false);
         adultL.setPadding(false);
 
-        //
+
 
 
         forthV.add(searchButton);

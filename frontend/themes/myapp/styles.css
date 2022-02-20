@@ -4,3 +4,7 @@
       --lumo-border-radius: calc(var(--lumo-size-m) / 2);
 
     }
+.application-header {
+  background: green;
+  border-bottom: 1px solid gray;
+}
