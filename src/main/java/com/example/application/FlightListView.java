@@ -1,24 +1,32 @@
 package com.example.application;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.router.Route;
-import org.apache.tomcat.util.buf.UriUtil;
-import org.springframework.web.util.UriUtils;
+import com.vaadin.flow.server.VaadinService;
 
-import java.sql.SQLException;
+import java.sql.*;
 
 @Route("/flightList")
 public class FlightListView extends VerticalLayout {
 
     MainView mainView;
+    Statement statement;
+    int id = -1;
+    String type;
+    String depCity;
+    Date depDate;
+    String arrCity;
+    Date returnDate;
+    int adult_n;
+    int child_n;
 
     {
         try {
@@ -28,22 +36,47 @@ public class FlightListView extends VerticalLayout {
         }
     }
 
-    public FlightListView() throws SQLException {
+    public FlightListView() throws SQLException, ClassNotFoundException {
+
+        //DataBase
+        Class.forName("com.mysql.jdbc.Driver");
+        Connection dbcon = DriverManager.getConnection(
+                "jdbc:mysql://localhost:3306/airWaysWebApp?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC",
+                "airwayuser", "alnukod1993");
+        statement=dbcon.createStatement();
+        //Taking data from previous page
+        ResultSet checkIdSet = statement.executeQuery("select id from permanentData");
+        checkIdSet.next();
+        if (checkIdSet.getInt("id") == (int)VaadinService.getCurrentRequest().getWrappedSession().getAttribute("id")) {
+            ResultSet resultSet = statement.executeQuery("select * from permanentData;");
+            while (resultSet.next()) {
+
+                id = resultSet.getInt("id");
+                type = resultSet.getString("type");
+                depCity = resultSet.getString("depcity");
+                arrCity = resultSet.getString("arrcity");
+                adult_n = resultSet.getInt("adult");
+                child_n = resultSet.getInt("child");
+                depDate = resultSet.getDate("depdate");
+                returnDate = resultSet.getDate("returndate");
+            }
+        }
+        //
+
         VerticalLayout verticalLayout = new VerticalLayout();
         HorizontalLayout firstL = new HorizontalLayout();
-
 
         //firstLayer
         TextField departTxt = new TextField();
         TextField arriveTxt = new TextField();
         TextField dates = new TextField();
-        Button wayType = new Button(mainView.changeBtn.getText());
-        Button adultNum = new Button(mainView.adultNum.getValue().toString());// stopped here, this didnt work
-        Button childNum = new Button("0");
-        departTxt.setValue("FUK");
+        Button wayType = new Button("way type");
+        Button adultNum = new Button(Integer.toString(adult_n));
+        Button childNum = new Button(Integer.toString(child_n));
+        departTxt.setValue(depCity);
         departTxt.setReadOnly(true);
         departTxt.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
-        arriveTxt.setValue("LA");
+        arriveTxt.setValue(arrCity);
         arriveTxt.setReadOnly(true);
         arriveTxt.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
         wayType.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
@@ -53,7 +86,7 @@ public class FlightListView extends VerticalLayout {
         childNum.setIcon(new Icon(VaadinIcon.CHILD));
         adultNum.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
         childNum.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        dates.setValue("2022.3.12 ~ 2022.4.11");
+        dates.setValue(depDate + " ~ "+returnDate);
         dates.setReadOnly(true);
         dates.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
 
@@ -69,4 +102,6 @@ public class FlightListView extends VerticalLayout {
                 verticalLayout
         );
     }
+
+    public void setId(int id){ this.id = id;}
 }

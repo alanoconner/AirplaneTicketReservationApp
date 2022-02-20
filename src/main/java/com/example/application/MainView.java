@@ -17,9 +17,11 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -28,6 +30,9 @@ public class MainView extends VerticalLayout {
 
     // DataBases
     Statement statement;
+    public int id;
+    Random random;
+    FlightListView flightListView;
     //
 
     //Date and destination
@@ -45,18 +50,19 @@ public class MainView extends VerticalLayout {
     HorizontalLayout forthV = new HorizontalLayout();
     //Buttons
     Button changeBtn = new Button("Two-way");// one or two-way ticket
-    Button searchButton = new Button("Search", event -> UI.getCurrent().navigate("/flightList"));
+    Button searchButton = new Button("Search");
     //Integer fields
     IntegerField adultNum = new IntegerField();
     IntegerField childNum = new IntegerField();
 
-    public MainView() throws SQLException, ClassNotFoundException {
+    public MainView() throws SQLException, ClassNotFoundException{
         //Initialize connection to DBs
         Class.forName("com.mysql.jdbc.Driver");
         Connection dbcon = DriverManager.getConnection(
                 "jdbc:mysql://localhost:3306/airWaysWebApp?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC",
                 "airwayuser", "alnukod1993");
         statement=dbcon.createStatement();
+        random = new Random();
 
 
         //Date and destination
@@ -69,14 +75,15 @@ public class MainView extends VerticalLayout {
         dep.setWidth(230,Unit.PIXELS);
         arr.setWidth(230,Unit.PIXELS);
         //Adding values from databases to destination ComboBox
-        List<String> cityList = new ArrayList<>();
+        List<String> depCityList = new ArrayList<>();
+        List<String> arrCityList = new ArrayList<>();
         ResultSet resForCBox = statement.executeQuery("select * from flightplan1");
         while (resForCBox.next()){
-            if (!cityList.contains(resForCBox.getString("departcity")))cityList.add(resForCBox.getString("departcity"));
-
+            if (!depCityList.contains(resForCBox.getString("departcity")))depCityList.add(resForCBox.getString("departcity"));
+            if (!arrCityList.contains(resForCBox.getString("arrcity")))arrCityList.add(resForCBox.getString("arrcity"));
         }
-        dep.setItems(cityList);
-        arr.setItems(cityList);
+        dep.setItems(depCityList);
+        arr.setItems(arrCityList);
 
 
         //Buttons
@@ -95,6 +102,23 @@ public class MainView extends VerticalLayout {
         });
         changeBtn.setSizeFull();
         changeBtn.addThemeVariants(ButtonVariant.LUMO_ICON);
+        searchButton.addClickListener(clickEvent->{
+           id = random.nextInt(99999);
+           String type = "tolist";
+            try {
+                statement.executeUpdate("INSERT INTO permanentData VALUES ("+ id +","+"'"+
+                        type+"'"+","+"'"+dep.getValue()+"'"+","+"'"+
+                        arr.getValue()+"'"+","+","+adultNum.getValue()+","+
+                        childNum.getValue()+startDate+","+endDate+");");
+
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            VaadinService.getCurrentRequest().getWrappedSession().setAttribute("id",id);
+
+            UI.getCurrent().navigate("/flightList");
+        });
         searchButton.addClickShortcut(Key.ENTER);
         searchButton.setIcon(new Icon(VaadinIcon.SEARCH));
         searchButton.setIconAfterText(true);
@@ -125,6 +149,7 @@ public class MainView extends VerticalLayout {
 
         forthV.add(searchButton);
 
+
         passNumV.add(adultL,childL);
 
 
@@ -139,7 +164,6 @@ public class MainView extends VerticalLayout {
 
 
         departAndDateV.add(destinationsV, datesV, thirdV,forthV);
-
         departAndDateV.setAlignItems(FlexComponent.Alignment.CENTER);
         setHeightFull();
         setAlignItems(FlexComponent.Alignment.CENTER);
@@ -157,4 +181,6 @@ public class MainView extends VerticalLayout {
 
 
     }
+
+    private void saveValue(MainView ui, int value){ }
 }
