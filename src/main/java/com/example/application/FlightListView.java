@@ -1,5 +1,6 @@
 package com.example.application;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -23,7 +24,7 @@ public class FlightListView extends VerticalLayout {
 
     MainView mainView;
     Statement statement;
-    int id = -1;
+    int id;
     String type;
     String depCity;
     String depDate;
@@ -31,7 +32,19 @@ public class FlightListView extends VerticalLayout {
     String returnDate;
     int adult_n;
     int child_n;
-
+    //
+    TextField departTxt;
+    TextField arriveTxt;
+    TextField dates;
+    AtomicReference<String> date;// date string
+    Button wayType;
+    Button adultNum;
+    Button childNum;
+    Grid<Flight> grid;
+    //
+    List<Flight> flightlist= new ArrayList<>();
+    List<Flight> tableData = new ArrayList<>();//empty list
+    //
     {
         try {
             mainView = new MainView();
@@ -39,6 +52,7 @@ public class FlightListView extends VerticalLayout {
             e.printStackTrace();
         }
     }
+    //
 
     public FlightListView() throws SQLException, ClassNotFoundException {
 
@@ -48,8 +62,7 @@ public class FlightListView extends VerticalLayout {
                 "jdbc:mysql://localhost:3306/airWaysWebApp?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC",
                 "airwayuser", "alnukod1993");
         statement=dbcon.createStatement();
-        List<Flight> flightlist= new ArrayList<>();
-        List<Flight> tableData = new ArrayList<>();//empty list
+
 
 
         //Taking data from previous page
@@ -61,19 +74,21 @@ public class FlightListView extends VerticalLayout {
         child_n = (int)VaadinService.getCurrentRequest().getWrappedSession().getAttribute("child");
         depDate = VaadinService.getCurrentRequest().getWrappedSession().getAttribute("depdate").toString().replace("-","/");
         returnDate = VaadinService.getCurrentRequest().getWrappedSession().getAttribute("retdate").toString().replace("-","/");
+        //Initializing variables
+        date = new AtomicReference<>(depDate);
+        childNum = new Button(Integer.toString(child_n));
+        adultNum = new Button(Integer.toString(adult_n));
+        wayType = new Button(type);
+        dates = new TextField();
+        arriveTxt = new TextField();
+        departTxt = new TextField();
+        grid = new Grid<>();
         //
 
         VerticalLayout verticalLayout = new VerticalLayout();
         HorizontalLayout firstL = new HorizontalLayout();
 
         //firstLayer
-        TextField departTxt = new TextField();
-        TextField arriveTxt = new TextField();
-        TextField dates = new TextField();
-        AtomicReference<String> date = new AtomicReference<>(depDate);// date string
-        Button wayType = new Button(type);
-        Button adultNum = new Button(Integer.toString(adult_n));
-        Button childNum = new Button(Integer.toString(child_n));
         departTxt.setValue(depCity);
         departTxt.setReadOnly(true);
         departTxt.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
@@ -92,30 +107,9 @@ public class FlightListView extends VerticalLayout {
         dates.setReadOnly(true);
         dates.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
 
-
         //Grid
-        Grid<Flight> grid = new Grid<>();
         createGrid(grid);
-        grid.addComponentColumn(Flight->{Button buybutton = new Button("Buy", click->{// navigates to next action depending on way type
-            if(wayType.getText().equals("Two-way")){
-                departTxt.setValue(arrCity);
-                arriveTxt.setValue(depCity);
-                date.set(returnDate);
-                dates.setValue(returnDate);
-            }
-            try {
-                grid.removeAllColumns();
-                createGrid(grid);
-                fillGrid(arrCity,returnDate,depCity,tableData,grid);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        });
-            return buybutton;
-        });
         if(dates.getValue().equals(depDate)){fillGrid(depCity,date.toString(),arrCity,flightlist,grid);}
-
-
 
         //Setting Layouts
         firstL.add(departTxt,new Icon(VaadinIcon.ARROW_RIGHT),arriveTxt,dates, wayType,adultNum,childNum);
@@ -134,7 +128,6 @@ public class FlightListView extends VerticalLayout {
 
     private void fillGrid(String depcity, String flightdate, String arrcity,List<Flight> flightlist, Grid grid) throws SQLException {
         //Filling grid
-
         ResultSet resultSet = statement.executeQuery("Select * from flightplan1 where departcity='"+depcity+
                 "' and departdate='"+flightdate.replace("/",".")+
                 "' and arrcity='"+arrcity+"';");
@@ -147,9 +140,9 @@ public class FlightListView extends VerticalLayout {
             flight.setDepart_time(deptime);
             flight.setFlight_time((int)resultSet.getFloat("flighttime"));
             flight.setPrice(resultSet.getInt("price"));
-            flight.setDepart_city_name(depCity);
-            flight.setArrival_city_name(arrCity);
-            flight.setDepart_date(depDate);
+            flight.setDepart_city_name(depcity);
+            flight.setArrival_city_name(arrcity);
+            flight.setDepart_date(flightdate);
             flightlist.add(flight);
 
         }
@@ -165,6 +158,29 @@ public class FlightListView extends VerticalLayout {
         grid.addColumn(Flight::getDepart_time).setHeader("Departure time");
         grid.addColumn(Flight::getFlight_time).setHeader("Flight time");
         grid.addColumn(Flight::getPrice).setHeader("Price(USD)");
+        grid.addComponentColumn(Flight-> {Button button = new Button("Buy",click ->{
+            buttonAction();
+        });
+            return button;
+        });
+    }
+
+    private void buttonAction(){
+        if(wayType.getText().equals("Two-way")&&departTxt.getValue().equals(depCity)){
+            departTxt.setValue(arrCity);
+            arriveTxt.setValue(depCity);
+            date.set(returnDate);
+            dates.setValue(returnDate);
+            try {
+                grid.removeAllColumns();
+                createGrid(grid);
+                fillGrid(arrCity,returnDate,depCity,tableData,grid);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }else{
+            UI.getCurrent().navigate("/personalInformation");
+        }
 
     }
 
