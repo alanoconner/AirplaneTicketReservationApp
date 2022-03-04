@@ -30,6 +30,7 @@ public class PersonalInformationView extends VerticalLayout {
     String returnDate;
     int adult_n;
     int child_n;
+    int price;
 
     TextField departTxt1;
     TextField arriveTxt1;
