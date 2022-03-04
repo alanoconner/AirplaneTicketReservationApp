@@ -1,6 +1,5 @@
 package com.example.application;
 
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -11,13 +10,13 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
-import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinService;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Route("/flightList")
 public class FlightListView extends VerticalLayout {
@@ -49,6 +48,8 @@ public class FlightListView extends VerticalLayout {
                 "jdbc:mysql://localhost:3306/airWaysWebApp?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC",
                 "airwayuser", "alnukod1993");
         statement=dbcon.createStatement();
+        List<Flight> flightlist= new ArrayList<>();
+        List<Flight> tableData = new ArrayList<>();//empty list
 
 
         //Taking data from previous page
@@ -69,6 +70,7 @@ public class FlightListView extends VerticalLayout {
         TextField departTxt = new TextField();
         TextField arriveTxt = new TextField();
         TextField dates = new TextField();
+        AtomicReference<String> date = new AtomicReference<>(depDate);// date string
         Button wayType = new Button(type);
         Button adultNum = new Button(Integer.toString(adult_n));
         Button childNum = new Button(Integer.toString(child_n));
@@ -85,30 +87,57 @@ public class FlightListView extends VerticalLayout {
         childNum.setIcon(new Icon(VaadinIcon.CHILD));
         adultNum.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
         childNum.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        dates.setValue(depDate + " ~ "+returnDate);
+        dates.setValue(date.get());
         dates.setWidth(275, Unit.PIXELS);
         dates.setReadOnly(true);
         dates.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
 
+
         //Grid
         Grid<Flight> grid = new Grid<>();
-        grid.addColumn(Flight::getId).setHeader("Flight ID");
-        grid.addColumn(Flight::getDepart_city_name).setHeader("Departure");
-        grid.addColumn(Flight::getArrival_city_name).setHeader("Arrival");
-        grid.addColumn(Flight::getDepart_date).setHeader("Date");
-        grid.addColumn(Flight::getDepart_time).setHeader("Departure time");
-        grid.addColumn(Flight::getFlight_time).setHeader("Flight time");
-        grid.addColumn(Flight::getPrice).setHeader("Price");
-        grid.addComponentColumn(Flight->{Button buybutton = new Button("Buy");
+        createGrid(grid);
+        grid.addComponentColumn(Flight->{Button buybutton = new Button("Buy", click->{// navigates to next action depending on way type
+            if(wayType.getText().equals("Two-way")){
+                departTxt.setValue(arrCity);
+                arriveTxt.setValue(depCity);
+                date.set(returnDate);
+                dates.setValue(returnDate);
+            }
+            try {
+                grid.removeAllColumns();
+                createGrid(grid);
+                fillGrid(arrCity,returnDate,depCity,tableData,grid);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
             return buybutton;
         });
-        //Filling grid
-        List<String> tableData = new ArrayList<>();
-        List<Flight> flightlist= new ArrayList<>();
+        if(dates.getValue().equals(depDate)){fillGrid(depCity,date.toString(),arrCity,flightlist,grid);}
 
-        ResultSet resultSet = statement.executeQuery("Select * from flightplan1 where departcity='"+depCity+
-                "' and departdate='"+depDate.replace("/",".")+
-                "' and arrcity='"+arrCity+"';");
+
+
+        //Setting Layouts
+        firstL.add(departTxt,new Icon(VaadinIcon.ARROW_RIGHT),arriveTxt,dates, wayType,adultNum,childNum);
+        firstL.setAlignItems(Alignment.CENTER);
+
+        verticalLayout.add(firstL);
+        verticalLayout.setAlignItems(Alignment.CENTER);
+
+        add(
+                verticalLayout,
+                grid
+        );
+    }
+
+    public void setId(int id){ this.id = id;}
+
+    private void fillGrid(String depcity, String flightdate, String arrcity,List<Flight> flightlist, Grid grid) throws SQLException {
+        //Filling grid
+
+        ResultSet resultSet = statement.executeQuery("Select * from flightplan1 where departcity='"+depcity+
+                "' and departdate='"+flightdate.replace("/",".")+
+                "' and arrcity='"+arrcity+"';");
         while (resultSet.next()){
 
             Flight flight = new Flight();
@@ -126,20 +155,18 @@ public class FlightListView extends VerticalLayout {
         }
         grid.setItems(flightlist);
         //
-
-
-
-        firstL.add(departTxt,new Icon(VaadinIcon.ARROW_RIGHT),arriveTxt,dates, wayType,adultNum,childNum);
-        firstL.setAlignItems(Alignment.CENTER);
-
-        verticalLayout.add(firstL);
-        verticalLayout.setAlignItems(Alignment.CENTER);
-
-        add(
-                verticalLayout,
-                grid
-        );
     }
 
-    public void setId(int id){ this.id = id;}
+    private void createGrid(Grid<Flight> grid){
+        grid.addColumn(Flight::getId).setHeader("Flight ID");
+        grid.addColumn(Flight::getDepart_city_name).setHeader("Departure");
+        grid.addColumn(Flight::getArrival_city_name).setHeader("Arrival");
+        grid.addColumn(Flight::getDepart_date).setHeader("Date");
+        grid.addColumn(Flight::getDepart_time).setHeader("Departure time");
+        grid.addColumn(Flight::getFlight_time).setHeader("Flight time");
+        grid.addColumn(Flight::getPrice).setHeader("Price(USD)");
+
+    }
+
+
 }
