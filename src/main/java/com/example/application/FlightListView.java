@@ -32,6 +32,7 @@ public class FlightListView extends VerticalLayout {
     String returnDate;
     int adult_n;
     int child_n;
+    Button _buyBtn;
     //
     TextField departTxt;
     TextField arriveTxt;
@@ -44,6 +45,7 @@ public class FlightListView extends VerticalLayout {
     //
     List<Flight> flightlist= new ArrayList<>();
     List<Flight> tableData = new ArrayList<>();//empty list
+
     //
     {
         try {
@@ -74,6 +76,7 @@ public class FlightListView extends VerticalLayout {
         child_n = (int)VaadinService.getCurrentRequest().getWrappedSession().getAttribute("child");
         depDate = VaadinService.getCurrentRequest().getWrappedSession().getAttribute("depdate").toString().replace("-","/");
         returnDate = VaadinService.getCurrentRequest().getWrappedSession().getAttribute("retdate").toString().replace("-","/");
+        _buyBtn = new Button("Buy");
         //Initializing variables
         date = new AtomicReference<>(depDate);
         childNum = new Button(Integer.toString(child_n));
@@ -139,15 +142,13 @@ public class FlightListView extends VerticalLayout {
             deptime =new StringBuilder(deptime).insert(deptime.length()-2, ":").toString();
             flight.setDepart_time(deptime);
             flight.setFlight_time((int)resultSet.getFloat("flighttime"));
-            flight.setPrice(resultSet.getInt("price"));
+            flight.setPrice(resultSet.getInt("price")+"$");
             flight.setDepart_city_name(depcity);
             flight.setArrival_city_name(arrcity);
             flight.setDepart_date(flightdate);
             flightlist.add(flight);
-
         }
         grid.setItems(flightlist);
-        //
     }
 
     private void createGrid(Grid<Flight> grid){
@@ -157,15 +158,23 @@ public class FlightListView extends VerticalLayout {
         grid.addColumn(Flight::getDepart_date).setHeader("Date");
         grid.addColumn(Flight::getDepart_time).setHeader("Departure time");
         grid.addColumn(Flight::getFlight_time).setHeader("Flight time");
-        grid.addColumn(Flight::getPrice).setHeader("Price(USD)");
-        grid.addComponentColumn(Flight-> {Button button = new Button("Buy",click ->{
-            buttonAction();
+        grid.addColumn(Flight::getPrice).setHeader("Price(for ONE passenger)");
+
+        grid.addComponentColumn(flight-> {Button button = new Button("Buy",click ->{
+
+            if(VaadinService.getCurrentRequest().getWrappedSession().getAttribute("ticket1")==null) {
+                VaadinService.getCurrentRequest().getWrappedSession().setAttribute("ticket1", flight.getId());
+            } else{
+                VaadinService.getCurrentRequest().getWrappedSession().setAttribute("ticket2", flight.getId());
+            }
+            buttonAction(flight);
         });
+
             return button;
         });
     }
 
-    private void buttonAction(){
+    private void buttonAction(Flight flight){
         if(wayType.getText().equals("Two-way")&&departTxt.getValue().equals(depCity)){
             departTxt.setValue(arrCity);
             arriveTxt.setValue(depCity);
@@ -179,6 +188,7 @@ public class FlightListView extends VerticalLayout {
                 ex.printStackTrace();
             }
         }else{
+
             UI.getCurrent().navigate("/personalInformation");
         }
 

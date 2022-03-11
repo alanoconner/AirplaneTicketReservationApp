@@ -1,5 +1,7 @@
 package com.example.application;
 
+import com.vaadin.flow.component.button.Button;
+
 public class Flight {
     private Integer id;
     private String depart_city_name;
@@ -8,7 +10,11 @@ public class Flight {
     private String depart_time;
     private float flight_time;
     private Integer available_seats;
-    private int price;
+    private String price;
+
+
+
+    private Button button;
 
     public Integer getId() {
         return id;
@@ -66,12 +72,16 @@ public class Flight {
         this.available_seats = available_seats;
     }
 
-    public int getPrice() {
+    public String getPrice() {
         return price;
     }
 
-    public void setPrice(int price) {
+    public void setPrice(String price) {
         this.price = price;
     }
+
+    public Button getButton() { return button; }
+
+    public void setButton(Button button) {this.button = button;}
 
 }

@@ -7,6 +7,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 //
 //
@@ -288,19 +291,31 @@ public class SetReadUIComponents extends UI {
         String[] cities = city.split("\n");
 
 
-        for (int i = 0; i < 200; i++) {
-            int days = random.nextInt(20)+10;
-            int time = random.nextInt(23)+1;
-            int fligtime = random.nextInt(12)+3;
-            int avseats = random.nextInt(299)+1;
-            int price = random.nextInt(1500)+50;
-            int months = random.nextInt(2)+10;
-            //int countInserted = statement.executeUpdate("INSERT INTO flightplan1 VALUES ("+id+",'"+
-            // cities[random.nextInt(240)]+"',"+"'2022."+months+"."+days+"',"+time+"00,"+
-            // fligtime+",'"+cities[random.nextInt(240)]+"',"+avseats+","+price+");");
-            id++;
-        }
+//        for (int i = 0; i < 200; i++) {
+//            int days = random.nextInt(20)+10;
+//            int time = random.nextInt(23)+1;
+//            int fligtime = random.nextInt(12)+3;
+//            int avseats = random.nextInt(299)+1;
+//            int price = random.nextInt(1500)+50;
+//            int months = random.nextInt(2)+10;
+//            //int countInserted = statement.executeUpdate("INSERT INTO flightplan1 VALUES ("+id+",'"+
+//            // cities[random.nextInt(240)]+"',"+"'2022."+months+"."+days+"',"+time+"00,"+
+//            // fligtime+",'"+cities[random.nextInt(240)]+"',"+avseats+","+price+");");
+//            id++;
+//        }
+
     }
 
-}
+
+
+
+
+
+
+
+
+    }
+
+
+
 
