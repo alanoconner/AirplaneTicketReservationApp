@@ -1,17 +1,18 @@
 package com.example.application;
 
-import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.Unit;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
@@ -19,9 +20,15 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinService;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.ZoneId;
+import java.time.format.TextStyle;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Route("/personalInformation")
 public class PersonalInformationView extends VerticalLayout {
@@ -41,6 +48,7 @@ public class PersonalInformationView extends VerticalLayout {
     String time2;
     String ticketID1;
     String ticketID2;
+    List<TextField> components;
     TextField departTxt1;
     TextField arriveTxt1;
     TextField departTxt2;
@@ -136,6 +144,7 @@ public class PersonalInformationView extends VerticalLayout {
         time2F = new TextField();
         checkBox = new Checkbox();
         keisan = new Button();
+        components = new ArrayList<>();
 
         //Ticket information component Setting
         departTxt1.setValue(depCity);
@@ -171,12 +180,12 @@ public class PersonalInformationView extends VerticalLayout {
         date2.setWidth(125, Unit.PIXELS);
         date2.setReadOnly(true);
         date2.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
-        price1Button.setText(price1+"$");
+        price1Button.setText(price1*(adult_n+child_n)+"$");
         price1Button.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        price2Button.setText(price2+"$");
+        price2Button.setText(price2*(adult_n+child_n)+"$");
         price2Button.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        price1Button.setWidth(100,Unit.PIXELS);
-        price2Button.setWidth(100,Unit.PIXELS);
+        price1Button.setWidth(110,Unit.PIXELS);
+        price2Button.setWidth(110,Unit.PIXELS);
         time1F.setValue(time1);
         time1F.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
         time1F.setReadOnly(true);
@@ -184,6 +193,7 @@ public class PersonalInformationView extends VerticalLayout {
         time2F.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
         time2F.setReadOnly(true);
         checkBox.setLabel("I accept the terms and conditions");
+        checkBox.setRequiredIndicatorVisible(true);
         total = price1*(adult_n+child_n)+price2*(adult_n+child_n);
         keisan.setText(Integer.toString(total));
         keisan.setIcon(new Icon(VaadinIcon.DOLLAR));
@@ -211,6 +221,8 @@ public class PersonalInformationView extends VerticalLayout {
             nameF.setErrorMessage("This field is required");
             birthdateF.setErrorMessage("This field is required");
             surnameF.setErrorMessage("This field is required");
+            components.add(nameF);
+            components.add(surnameF);
             pihlayout1.setAlignItems(Alignment.CENTER);
             pivlayout1.setAlignItems(Alignment.CENTER);
             pihlayout1.add(nameF,surnameF, birthdateF);
@@ -222,37 +234,53 @@ public class PersonalInformationView extends VerticalLayout {
         H3 patextF = new H3("Please provide payment and contact information");
         VerticalLayout pavlayout1 = new VerticalLayout();
         VerticalLayout pavlayout2 = new VerticalLayout();
-        DatePicker.DatePickerI18n singleFormatI18n = new DatePicker.DatePickerI18n();
         TextField cardnameF = new TextField("Cardholder Name");
         TextField cardNumF = new TextField("Card Number");
         TextField cvvF = new TextField("CVV");
         TextField phoneNF = new TextField("Phone Number");
         EmailField mailF = new EmailField("Email Address");
-        DatePicker exdateF = new DatePicker("Expiration Date");
-        singleFormatI18n.setDateFormat("M/yy");
-        exdateF.setI18n(singleFormatI18n);
         cardnameF.setRequiredIndicatorVisible(true);
         cardNumF.setRequiredIndicatorVisible(true);
         cvvF.setRequiredIndicatorVisible(true);
         phoneNF.setRequiredIndicatorVisible(true);
         mailF.setRequiredIndicatorVisible(true);
-        exdateF.setRequiredIndicatorVisible(true);
         cardnameF.setErrorMessage("This field is required");
         cardNumF.setErrorMessage("This field is required");
         cvvF.setErrorMessage("This field is required");
         phoneNF.setErrorMessage("This field is required");
         mailF.setErrorMessage("This field is required");
-        exdateF.setErrorMessage("This field is required");
-        pavlayout2.setAlignItems(Alignment.END);
-        pavlayout1.setAlignItems(Alignment.START);
-        pavlayout1.add(cardNumF,cardnameF,mailF);
-        pavlayout2.add(exdateF,cvvF,phoneNF);
+        ////Expiration Date Format
+        HorizontalLayout n_expdateL =new HorizontalLayout();
+        LocalDate now = LocalDate.now(ZoneId.systemDefault());
+        List<Integer> selectableYears = IntStream.range(
+                        now.getYear(),
+                        now.getYear() + 11)
+                .boxed().collect(Collectors.toList());
+        List<Integer> selectableMonths = IntStream.range(1,13).boxed().collect(Collectors.toList());
+        ComboBox yearPicker = new ComboBox<>("Year", selectableYears);
+        yearPicker.setRequiredIndicatorVisible(true);
+        yearPicker.setWidth(107, Unit.PIXELS);
+        ComboBox monthPicker = new ComboBox<>("Month", selectableMonths);
+        monthPicker.setWidth(105, Unit.PIXELS);
+        monthPicker.setRequiredIndicatorVisible(true);
+        ////
         ////setting these components
         cardNumF.setWidth(250,Unit.PIXELS);
         mailF.setWidth(225,Unit.PIXELS);
         cardnameF.setWidth(250,Unit.PIXELS);
         cvvF.setWidth(80,Unit.PIXELS);
+        phoneNF.setWidth(225,Unit.PIXELS);
+        components.add(cardnameF);
+        components.add(cardNumF);
+        components.add(phoneNF);
+        components.add(cvvF);
         ////
+        n_expdateL.setAlignItems(Alignment.END);
+        pavlayout2.setAlignItems(Alignment.END);
+        pavlayout1.setAlignItems(Alignment.START);
+        n_expdateL.add(monthPicker,yearPicker);
+        pavlayout1.add(cardNumF,cardnameF,mailF);
+        pavlayout2.add(n_expdateL,cvvF,phoneNF);
         //
 
         //FINAL Buttons
@@ -261,8 +289,27 @@ public class PersonalInformationView extends VerticalLayout {
         buybutton.addThemeVariants(ButtonVariant.LUMO_PRIMARY,ButtonVariant.LUMO_SUCCESS,ButtonVariant.LUMO_LARGE);
         cancelButton.addThemeVariants(ButtonVariant.LUMO_ERROR,ButtonVariant.LUMO_LARGE);
         cancelButton.addClickListener(click->UI.getCurrent().navigate(""));
-        buybutton.addClickListener(click->{
 
+        buybutton.addClickListener(click->{
+            dialogV();
+//            ////////////////////////////////This is just to show the bar
+//            Dialog barDialog = new Dialog();
+//            ProgressBar progressBar = new ProgressBar();
+//            Div progressBarL = new Div();
+//            progressBarL.setText("Proceeding payment...");
+//            progressBar.getStyle().set("font-size", "var(--lumo-font-size-xs)");
+//            barDialog.open();
+//            //dialogV();
+//            for (int i = 0; i < 10000; i++) {
+//                progressBar.setValue(i/10000);
+//                if(progressBar.getValue()>=0.9){
+//                    barDialog.close();
+//                    dialogV();
+//                }
+//            }
+//            barDialog.add(progressBarL,progressBar);
+//            barDialog.setWidth(400,Unit.PIXELS);
+//            ////////////////////////////////
         });
         //
 
@@ -310,5 +357,32 @@ public class PersonalInformationView extends VerticalLayout {
             verticalLayout
         );
 
+    }
+
+    private void dialogV(){
+        Dialog dialog = new Dialog();
+        VerticalLayout dialogL = new VerticalLayout();
+        HorizontalLayout firstL = new HorizontalLayout();
+        HorizontalLayout secondL = new HorizontalLayout();
+        HorizontalLayout thirdL = new HorizontalLayout();
+        HorizontalLayout forthL = new HorizontalLayout();
+        Html successH = new Html("<p>Success</p>");
+        Icon checkIcon = new Icon(VaadinIcon.CHECK_CIRCLE);
+        checkIcon.setColor("#4BB543");
+        checkIcon.setSize("40px");
+        successH.getElement().getStyle().set("font-size","35px");
+        successH.getElement().getStyle().set("color","#4BB543");
+        Text underText = new Text("Your order number is: #2342391");
+        Text underText2 = new Text("Detail information will be sent to your email.");
+        Text underText3 = new Text("Thank you for using our service!");
+
+        firstL.add(checkIcon,successH);
+        firstL.setAlignItems(Alignment.CENTER);
+        secondL.add(underText);
+        thirdL.add(underText2);
+        forthL.add(underText3);
+        dialogL.add(firstL,secondL,thirdL,forthL);
+        dialog.add(dialogL);
+        dialog.open();
     }
 }
